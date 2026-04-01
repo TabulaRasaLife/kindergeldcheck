@@ -1614,12 +1614,10 @@
     }
 
     // ============================================================
-    //  EMAIL + FLUENTCRM + ZAPIER WEBHOOK
+    //  EMAIL + ZAPIER WEBHOOK
+    //  (Zapier übernimmt die FluentCRM-Integration server-seitig)
     // ============================================================
     const ZAPIER_WEBHOOK = 'https://hooks.zapier.com/hooks/catch/11104389/unkzuw2/';
-    // FluentCRM IDs: Liste "tabula-rasa-life" = 1, Tag "kindergeldcheck" = 74, Tag "ist-im-newsletterverteiler" = 51
-    const FLUENTCRM_API  = 'https://tabula-rasa.life/wp-json/fluent-crm/v2/subscribers';
-    const FLUENTCRM_AUTH = 'Basic ' + btoa('martin.maunbach:pnvD XHT1 zd7Z sZpz qVjm 1tdx');
 
     // Validierung: Button nur aktiv wenn E-Mail + Checkbox
     function validateEmailForm() {
@@ -1650,57 +1648,34 @@
         btn.disabled = true;
         btn.textContent = 'Wird gesendet...';
 
-        // 1) FluentCRM: Kontakt anlegen/aktualisieren mit Liste + Tags + Custom Fields
-        const fluentPayload = {
-            email: email,
-            first_name: vorname || '',
-            status: 'subscribed',
-            lists: [1],          // tabula-rasa-life
-            tags: [74, 51],      // kindergeldcheck, ist-im-newsletterverteiler
-            custom_values: {
-                kindergeld_ergebnis_typ:   lastResult.type    || '',
-                kindergeld_ergebnis_titel: lastResult.title   || '',
-                kindergeld_zielland:       answers.ziellandName || '',
-                kindergeld_ergebnis_html:  lastResult.sectionsHtml || ''
-            }
-        };
-
-        // 2) Zapier: Volles Ergebnis-HTML für die E-Mail-Automatisierung
+        // Zapier übernimmt: Kontakt in FluentCRM anlegen + Tags/Liste setzen + E-Mail senden
         const zapierPayload = {
             email: email,
             vorname: vorname || '',
-            ergebnis_typ: lastResult.type,
-            ergebnis_titel: lastResult.title,
-            ergebnis_untertitel: lastResult.subtitle || '',
-            ergebnis_html: lastResult.sectionsHtml,
-            wohnsitz_de: answers.wohnsitzDE || '',
-            sonderstatus: answers.sonderstatus || '',
-            zielland: answers.ziellandName || '',
-            zielland_kategorie: answers.ziellandKat || '',
-            kinder_aufenthalt: answers.kinderOrt || '',
-            sozialversicherung: answers.svStatus || '',
-            steuerpflicht: answers.steuerpflicht || '',
-            timestamp: new Date().toISOString()
+            ergebnis_typ:             lastResult.type           || '',
+            ergebnis_titel:           lastResult.title          || '',
+            ergebnis_untertitel:      lastResult.subtitle       || '',
+            ergebnis_html:            lastResult.sectionsHtml   || '',
+            kindergeld_ergebnis_typ:  lastResult.type           || '',
+            kindergeld_ergebnis_titel:lastResult.title          || '',
+            kindergeld_zielland:      answers.ziellandName      || '',
+            kindergeld_ergebnis_html: lastResult.sectionsHtml   || '',
+            wohnsitz_de:              answers.wohnsitzDE        || '',
+            sonderstatus:             answers.sonderstatus      || '',
+            zielland:                 answers.ziellandName      || '',
+            zielland_kategorie:       answers.ziellandKat       || '',
+            kinder_aufenthalt:        answers.kinderOrt         || '',
+            sozialversicherung:       answers.svStatus          || '',
+            steuerpflicht:            answers.steuerpflicht     || '',
+            timestamp:                new Date().toISOString()
         };
 
-        // Beide Requests parallel senden
-        const fluentReq = fetch(FLUENTCRM_API, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': FLUENTCRM_AUTH
-            },
-            body: JSON.stringify(fluentPayload)
-        });
-
-        const zapierReq = fetch(ZAPIER_WEBHOOK, {
+        fetch(ZAPIER_WEBHOOK, {
             method: 'POST',
             body: JSON.stringify(zapierPayload),
             headers: { 'Content-Type': 'application/json' },
             mode: 'no-cors'
-        });
-
-        Promise.all([fluentReq, zapierReq])
+        })
         .then(() => {
             sendingEl.style.display = 'none';
             document.getElementById('emailGate').style.display = 'none';
