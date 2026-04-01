@@ -913,31 +913,51 @@
             </div>
         </div>
 
-        <!-- STEP 8: Ergebnis -->
+        <!-- STEP 8: E-Mail-Eingabe -->
         <div class="step" data-step="8">
             <div class="step-label">Ergebnis</div>
-            <div class="result-card" id="resultCard">
-                <div class="result-header" id="resultHeader">
-                    <div class="icon" id="resultIcon"></div>
-                    <h3 id="resultTitle"></h3>
-                    <p id="resultSubtitle"></p>
+
+            <!-- Vor E-Mail-Eingabe: Nur E-Mail-Formular -->
+            <div id="emailGate">
+                <div class="result-card">
+                    <div class="result-header info">
+                        <div class="icon">&#9993;</div>
+                        <h3>Dein Ergebnis liegt vor!</h3>
+                        <p>Trage hier deine E-Mail-Adresse ein und wir senden dir das Ergebnis zu.</p>
+                    </div>
+                    <div class="result-body">
+                        <div class="input-group" style="margin-bottom:12px;">
+                            <label for="emailVorname">Vorname</label>
+                            <input type="text" id="emailVorname" placeholder="Dein Vorname" style="width:100%; padding:12px 16px; border:2px solid #e2e8f0; border-radius:10px; font-size:1rem; font-family:inherit;">
+                        </div>
+                        <div class="input-group" style="margin-bottom:16px;">
+                            <label for="emailInput">E-Mail-Adresse</label>
+                            <input type="email" id="emailInput" placeholder="deine@email.de" style="width:100%; padding:12px 16px; border:2px solid #e2e8f0; border-radius:10px; font-size:1rem; font-family:inherit;">
+                        </div>
+                        <label class="checkbox-option" style="margin-bottom:16px; font-size:0.82rem;">
+                            <input type="checkbox" id="dsgvoCheck">
+                            <span class="checkbox-box"></span>
+                            <span class="radio-label" style="font-size:0.82rem; line-height:1.4;">Ich bin damit einverstanden, dass meine Angaben zur Auswertung und Kontaktaufnahme verarbeitet werden. Weitere Infos in der <a href="#" style="color:#ff5f1f;">Datenschutzerklärung</a>.</span>
+                        </label>
+                        <button class="btn btn-primary" id="btnSendEmail" style="width:100%;" disabled onclick="sendEmail()">Ergebnis per E-Mail erhalten</button>
+                        <div id="emailError" style="display:none; color:#dc2626; font-size:0.85rem; margin-top:10px; text-align:center;"></div>
+                        <div id="emailSending" style="display:none; color:#64748b; font-size:0.85rem; margin-top:10px; text-align:center;">Wird gesendet...</div>
+                    </div>
                 </div>
-                <div class="result-body" id="resultBody"></div>
             </div>
 
-            <div class="result-note" id="resultNote">
-                <strong>Wichtiger Hinweis:</strong> Diese Einschätzung dient ausschließlich der groben Orientierung und ersetzt keine individuelle Beratung. Kindergeldrecht ist komplex und hängt von vielen Einzelfallumständen ab. Bitte wende dich für eine verbindliche Auskunft an die Familienkasse oder einen spezialisierten Steuerberater.
-            </div>
-
-            <div class="email-section">
-                <h4>Ergebnis per E-Mail erhalten</h4>
-                <p>Trage deine E-Mail-Adresse ein und wir senden dir das Ergebnis zu.</p>
-                <div class="email-row">
-                    <input type="email" id="emailInput" placeholder="deine@email.de">
-                    <button class="btn btn-primary" onclick="sendEmail()">Senden</button>
+            <!-- Nach E-Mail-Eingabe: Bestätigung -->
+            <div id="emailSuccess" style="display:none;">
+                <div class="result-card">
+                    <div class="result-header positive">
+                        <div class="icon">&#10003;</div>
+                        <h3>Ergebnis wurde versendet!</h3>
+                        <p id="emailSuccessText">Wir haben dein persönliches Kindergeld-Ergebnis an deine E-Mail-Adresse gesendet. Bitte prüfe auch deinen Spam-Ordner.</p>
+                    </div>
                 </div>
-                <div class="email-sent" id="emailSent">
-                    &#10003; Ergebnis wurde versendet (Demo)
+
+                <div class="result-note">
+                    <strong>Wichtiger Hinweis:</strong> Diese Einschätzung dient ausschließlich der groben Orientierung und ersetzt keine individuelle Beratung. Kindergeldrecht ist komplex und hängt von vielen Einzelfallumständen ab. Bitte wende dich für eine verbindliche Auskunft an die Familienkasse oder einen spezialisierten Steuerberater.
                 </div>
             </div>
 
@@ -1051,11 +1071,18 @@
 
     function restart() {
         Object.keys(answers).forEach(k => delete answers[k]);
+        lastResult = {};
         document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+        document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
         document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
-        document.querySelectorAll('input[type="email"]').forEach(i => i.value = '');
+        document.querySelectorAll('input[type="email"], input[type="text"]').forEach(i => i.value = '');
         document.querySelectorAll('.btn-primary[id^="btnNext"]').forEach(b => b.disabled = true);
-        document.getElementById('emailSent').classList.remove('show');
+        document.getElementById('btnSendEmail').disabled = true;
+        document.getElementById('btnSendEmail').textContent = 'Ergebnis per E-Mail erhalten';
+        document.getElementById('emailGate').style.display = 'block';
+        document.getElementById('emailSuccess').style.display = 'none';
+        document.getElementById('emailError').style.display = 'none';
+        document.getElementById('emailSending').style.display = 'none';
         showStep(1);
     }
 
@@ -1509,16 +1536,17 @@
     //  RESULT RENDERING
     // ============================================================
     function setResult(type, icon, title, subtitle, sections) {
-        const header = document.getElementById('resultHeader');
-        header.className = 'result-header ' + type;
-        document.getElementById('resultIcon').innerHTML = icon;
-        document.getElementById('resultTitle').textContent = title;
-        document.getElementById('resultSubtitle').textContent = subtitle || '';
-
-        const body = document.getElementById('resultBody');
-        body.innerHTML = sections.map(s =>
-            `<div class="result-section"><h4>${s.title}</h4>${s.content}</div>`
+        // Ergebnis-Daten für Webhook speichern
+        const sectionsHtml = sections.map(s =>
+            `<div><h4>${s.title}</h4>${s.content}</div>`
         ).join('');
+
+        lastResult = {
+            type: type,
+            title: title,
+            subtitle: subtitle || '',
+            sectionsHtml: sectionsHtml
+        };
     }
 
     // ============================================================
@@ -1586,14 +1614,111 @@
     }
 
     // ============================================================
-    //  EMAIL (Demo)
+    //  EMAIL + FLUENTCRM + ZAPIER WEBHOOK
     // ============================================================
+    const ZAPIER_WEBHOOK = 'https://hooks.zapier.com/hooks/catch/11104389/unkzuw2/';
+    // FluentCRM IDs: Liste "tabula-rasa-life" = 1, Tag "kindergeldcheck" = 74, Tag "ist-im-newsletterverteiler" = 51
+    const FLUENTCRM_API  = 'https://tabula-rasa.life/wp-json/fluent-crm/v2/subscribers';
+    const FLUENTCRM_AUTH = 'Basic ' + btoa('martin.maunbach:pnvD XHT1 zd7Z sZpz qVjm 1tdx');
+
+    // Validierung: Button nur aktiv wenn E-Mail + Checkbox
+    function validateEmailForm() {
+        const email = document.getElementById('emailInput').value;
+        const dsgvo = document.getElementById('dsgvoCheck').checked;
+        const valid = email && email.includes('@') && email.includes('.') && dsgvo;
+        document.getElementById('btnSendEmail').disabled = !valid;
+    }
+    document.getElementById('emailInput').addEventListener('input', validateEmailForm);
+    document.getElementById('dsgvoCheck').addEventListener('change', validateEmailForm);
+    document.getElementById('emailVorname').addEventListener('input', validateEmailForm);
+
     function sendEmail() {
         const email = document.getElementById('emailInput').value;
-        if (email && email.includes('@')) {
-            document.getElementById('emailSent').classList.add('show');
+        const vorname = document.getElementById('emailVorname').value;
+        const errorEl = document.getElementById('emailError');
+        const sendingEl = document.getElementById('emailSending');
+        const btn = document.getElementById('btnSendEmail');
+
+        if (!email || !email.includes('@')) {
+            errorEl.textContent = 'Bitte gib eine gültige E-Mail-Adresse ein.';
+            errorEl.style.display = 'block';
+            return;
         }
+
+        errorEl.style.display = 'none';
+        sendingEl.style.display = 'block';
+        btn.disabled = true;
+        btn.textContent = 'Wird gesendet...';
+
+        // 1) FluentCRM: Kontakt anlegen/aktualisieren mit Liste + Tags + Custom Fields
+        const fluentPayload = {
+            email: email,
+            first_name: vorname || '',
+            status: 'subscribed',
+            lists: [1],          // tabula-rasa-life
+            tags: [74, 51],      // kindergeldcheck, ist-im-newsletterverteiler
+            custom_values: {
+                kindergeld_ergebnis_typ:   lastResult.type    || '',
+                kindergeld_ergebnis_titel: lastResult.title   || '',
+                kindergeld_zielland:       answers.ziellandName || '',
+                kindergeld_ergebnis_html:  lastResult.sectionsHtml || ''
+            }
+        };
+
+        // 2) Zapier: Volles Ergebnis-HTML für die E-Mail-Automatisierung
+        const zapierPayload = {
+            email: email,
+            vorname: vorname || '',
+            ergebnis_typ: lastResult.type,
+            ergebnis_titel: lastResult.title,
+            ergebnis_untertitel: lastResult.subtitle || '',
+            ergebnis_html: lastResult.sectionsHtml,
+            wohnsitz_de: answers.wohnsitzDE || '',
+            sonderstatus: answers.sonderstatus || '',
+            zielland: answers.ziellandName || '',
+            zielland_kategorie: answers.ziellandKat || '',
+            kinder_aufenthalt: answers.kinderOrt || '',
+            sozialversicherung: answers.svStatus || '',
+            steuerpflicht: answers.steuerpflicht || '',
+            timestamp: new Date().toISOString()
+        };
+
+        // Beide Requests parallel senden
+        const fluentReq = fetch(FLUENTCRM_API, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': FLUENTCRM_AUTH
+            },
+            body: JSON.stringify(fluentPayload)
+        });
+
+        const zapierReq = fetch(ZAPIER_WEBHOOK, {
+            method: 'POST',
+            body: JSON.stringify(zapierPayload),
+            headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors'
+        });
+
+        Promise.all([fluentReq, zapierReq])
+        .then(() => {
+            sendingEl.style.display = 'none';
+            document.getElementById('emailGate').style.display = 'none';
+            document.getElementById('emailSuccess').style.display = 'block';
+            document.getElementById('emailSuccessText').textContent =
+                `Wir haben dein persönliches Kindergeld-Ergebnis an ${email} gesendet. Bitte prüfe auch deinen Spam-Ordner.`;
+        })
+        .catch(() => {
+            sendingEl.style.display = 'none';
+            btn.disabled = false;
+            btn.textContent = 'Ergebnis per E-Mail erhalten';
+            errorEl.textContent = 'Es gab einen Fehler. Bitte versuche es erneut.';
+            errorEl.style.display = 'block';
+        });
     }
+
+    // Ergebnis-Daten zwischenspeichern für den Webhook
+    let lastResult = {};
 
     // Init
     updateProgress();
