@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -913,51 +914,37 @@
             </div>
         </div>
 
-        <!-- STEP 8: E-Mail-Eingabe -->
+        <!-- STEP 8: Ergebnis -->
         <div class="step" data-step="8">
             <div class="step-label">Ergebnis</div>
-
-            <!-- Vor E-Mail-Eingabe: Nur E-Mail-Formular -->
-            <div id="emailGate">
-                <div class="result-card">
-                    <div class="result-header info">
-                        <div class="icon">&#9993;</div>
-                        <h3>Dein Ergebnis liegt vor!</h3>
-                        <p>Trage hier deine E-Mail-Adresse ein und wir senden dir das Ergebnis zu.</p>
-                    </div>
-                    <div class="result-body">
-                        <div class="input-group" style="margin-bottom:12px;">
-                            <label for="emailVorname">Vorname</label>
-                            <input type="text" id="emailVorname" placeholder="Dein Vorname" style="width:100%; padding:12px 16px; border:2px solid #e2e8f0; border-radius:10px; font-size:1rem; font-family:inherit;">
-                        </div>
-                        <div class="input-group" style="margin-bottom:16px;">
-                            <label for="emailInput">E-Mail-Adresse</label>
-                            <input type="email" id="emailInput" placeholder="deine@email.de" style="width:100%; padding:12px 16px; border:2px solid #e2e8f0; border-radius:10px; font-size:1rem; font-family:inherit;">
-                        </div>
-                        <label class="checkbox-option" style="margin-bottom:16px; font-size:0.82rem;">
-                            <input type="checkbox" id="dsgvoCheck">
-                            <span class="checkbox-box"></span>
-                            <span class="radio-label" style="font-size:0.82rem; line-height:1.4;">Ich bin damit einverstanden, dass meine Angaben zur Auswertung und Kontaktaufnahme verarbeitet werden. Weitere Infos in der <a href="#" style="color:#ff5f1f;">Datenschutzerklärung</a>.</span>
-                        </label>
-                        <button class="btn btn-primary" id="btnSendEmail" style="width:100%;" disabled onclick="sendEmail()">Ergebnis per E-Mail erhalten</button>
-                        <div id="emailError" style="display:none; color:#dc2626; font-size:0.85rem; margin-top:10px; text-align:center;"></div>
-                        <div id="emailSending" style="display:none; color:#64748b; font-size:0.85rem; margin-top:10px; text-align:center;">Wird gesendet...</div>
-                    </div>
+            <div class="result-card" id="resultCard">
+                <div class="result-header" id="resultHeader">
+                    <div class="icon" id="resultIcon"></div>
+                    <h3 id="resultTitle"></h3>
+                    <p id="resultSubtitle"></p>
                 </div>
+                <div class="result-body" id="resultBody"></div>
             </div>
 
-            <!-- Nach E-Mail-Eingabe: Bestätigung -->
-            <div id="emailSuccess" style="display:none;">
-                <div class="result-card">
-                    <div class="result-header positive">
-                        <div class="icon">&#10003;</div>
-                        <h3>Ergebnis wurde versendet!</h3>
-                        <p id="emailSuccessText">Wir haben dein persönliches Kindergeld-Ergebnis an deine E-Mail-Adresse gesendet. Bitte prüfe auch deinen Spam-Ordner.</p>
+            <div class="result-note" id="resultNote">
+                <strong>Wichtiger Hinweis:</strong> Diese Einschätzung dient ausschließlich der groben Orientierung und ersetzt keine individuelle Beratung. Kindergeldrecht ist komplex und hängt von vielen Einzelfallumständen ab. Bitte wende dich für eine verbindliche Auskunft an die Familienkasse oder einen spezialisierten Steuerberater.
+            </div>
+
+            <div class="email-section">
+                <h4>Ergebnis per E-Mail erhalten</h4>
+                <p>Trage deinen Namen und deine E-Mail-Adresse ein und wir senden dir das Ergebnis zu.</p>
+                <div class="email-row" style="flex-direction: column; gap: 10px;">
+                    <input type="text" id="nameInput" placeholder="Dein Vorname" style="padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="email" id="emailInput" placeholder="deine@email.de" style="flex: 1;">
+                        <button class="btn btn-primary" id="submitBtn" onclick="sendEmail()">Senden</button>
                     </div>
                 </div>
-
-                <div class="result-note">
-                    <strong>Wichtiger Hinweis:</strong> Diese Einschätzung dient ausschließlich der groben Orientierung und ersetzt keine individuelle Beratung. Kindergeldrecht ist komplex und hängt von vielen Einzelfallumständen ab. Bitte wende dich für eine verbindliche Auskunft an die Familienkasse oder einen spezialisierten Steuerberater.
+                <div class="email-sent" id="emailSent">
+                    &#10003; Dein Ergebnis wird in Kürze an deine E-Mail-Adresse gesendet.
+                </div>
+                <div class="email-error" id="emailError" style="display: none; color: #dc2626; margin-top: 8px; font-size: 0.85rem;">
+                    Bitte gib deinen Vornamen und eine gültige E-Mail-Adresse ein.
                 </div>
             </div>
 
@@ -1071,18 +1058,11 @@
 
     function restart() {
         Object.keys(answers).forEach(k => delete answers[k]);
-        lastResult = {};
         document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
-        document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
         document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
-        document.querySelectorAll('input[type="email"], input[type="text"]').forEach(i => i.value = '');
+        document.querySelectorAll('input[type="email"]').forEach(i => i.value = '');
         document.querySelectorAll('.btn-primary[id^="btnNext"]').forEach(b => b.disabled = true);
-        document.getElementById('btnSendEmail').disabled = true;
-        document.getElementById('btnSendEmail').textContent = 'Ergebnis per E-Mail erhalten';
-        document.getElementById('emailGate').style.display = 'block';
-        document.getElementById('emailSuccess').style.display = 'none';
-        document.getElementById('emailError').style.display = 'none';
-        document.getElementById('emailSending').style.display = 'none';
+        document.getElementById('emailSent').classList.remove('show');
         showStep(1);
     }
 
@@ -1528,25 +1508,36 @@
             content: getSummaryTable()
         });
 
+        // Ergebnis-Daten global speichern für Webhook-Versand
+        window._kindergeldResult = {
+            ergebnis_typ: resultType,
+            ergebnis_titel: title,
+            ergebnis_html: document.getElementById('resultBody') ? '' : '', // wird nach Rendering gesetzt
+            kinder_aufenthalt: kinderOrt || '',
+            zielland: ziellandName || ''
+        };
+
         setResult(resultType, icon, title, subtitle, sections);
         showStep(totalSteps);
+
+        // HTML nach dem Rendering erfassen
+        window._kindergeldResult.ergebnis_html = document.getElementById('resultBody').innerHTML;
     }
 
     // ============================================================
     //  RESULT RENDERING
     // ============================================================
     function setResult(type, icon, title, subtitle, sections) {
-        // Ergebnis-Daten für Webhook speichern
-        const sectionsHtml = sections.map(s =>
-            `<div><h4>${s.title}</h4>${s.content}</div>`
-        ).join('');
+        const header = document.getElementById('resultHeader');
+        header.className = 'result-header ' + type;
+        document.getElementById('resultIcon').innerHTML = icon;
+        document.getElementById('resultTitle').textContent = title;
+        document.getElementById('resultSubtitle').textContent = subtitle || '';
 
-        lastResult = {
-            type: type,
-            title: title,
-            subtitle: subtitle || '',
-            sectionsHtml: sectionsHtml
-        };
+        const body = document.getElementById('resultBody');
+        body.innerHTML = sections.map(s =>
+            `<div class="result-section"><h4>${s.title}</h4>${s.content}</div>`
+        ).join('');
     }
 
     // ============================================================
@@ -1614,86 +1605,53 @@
     }
 
     // ============================================================
-    //  EMAIL + ZAPIER WEBHOOK
-    //  (Zapier übernimmt die FluentCRM-Integration server-seitig)
+    //  EMAIL + KLICKTIPP API
     // ============================================================
-    const ZAPIER_WEBHOOK = 'https://hooks.zapier.com/hooks/catch/11104389/unkzuw2/';
-
-    // Validierung: Button nur aktiv wenn E-Mail + Checkbox
-    function validateEmailForm() {
-        const email = document.getElementById('emailInput').value;
-        const dsgvo = document.getElementById('dsgvoCheck').checked;
-        const valid = email && email.includes('@') && email.includes('.') && dsgvo;
-        document.getElementById('btnSendEmail').disabled = !valid;
-    }
-    document.getElementById('emailInput').addEventListener('input', validateEmailForm);
-    document.getElementById('dsgvoCheck').addEventListener('change', validateEmailForm);
-    document.getElementById('emailVorname').addEventListener('input', validateEmailForm);
-
     function sendEmail() {
         const email = document.getElementById('emailInput').value;
-        const vorname = document.getElementById('emailVorname').value;
+        const name = document.getElementById('nameInput').value.trim();
         const errorEl = document.getElementById('emailError');
-        const sendingEl = document.getElementById('emailSending');
-        const btn = document.getElementById('btnSendEmail');
+        errorEl.style.display = 'none';
 
-        if (!email || !email.includes('@')) {
-            errorEl.textContent = 'Bitte gib eine gültige E-Mail-Adresse ein.';
+        if (!email || !email.includes('@') || !name) {
             errorEl.style.display = 'block';
             return;
         }
 
-        errorEl.style.display = 'none';
-        sendingEl.style.display = 'block';
+        const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.textContent = 'Wird gesendet...';
 
-        // Zapier übernimmt: Kontakt in FluentCRM anlegen + Tags/Liste setzen + E-Mail senden
-        const zapierPayload = {
-            email: email,
-            vorname: vorname || '',
-            ergebnis_typ:             lastResult.type           || '',
-            ergebnis_titel:           lastResult.title          || '',
-            ergebnis_untertitel:      lastResult.subtitle       || '',
-            ergebnis_html:            lastResult.sectionsHtml   || '',
-            kindergeld_ergebnis_typ:  lastResult.type           || '',
-            kindergeld_ergebnis_titel:lastResult.title          || '',
-            kindergeld_zielland:      answers.ziellandName      || '',
-            kindergeld_ergebnis_html: lastResult.sectionsHtml   || '',
-            wohnsitz_de:              answers.wohnsitzDE        || '',
-            sonderstatus:             answers.sonderstatus      || '',
-            zielland:                 answers.ziellandName      || '',
-            zielland_kategorie:       answers.ziellandKat       || '',
-            kinder_aufenthalt:        answers.kinderOrt         || '',
-            sozialversicherung:       answers.svStatus          || '',
-            steuerpflicht:            answers.steuerpflicht     || '',
-            timestamp:                new Date().toISOString()
-        };
+        const result = window._kindergeldResult || {};
 
-        fetch(ZAPIER_WEBHOOK, {
+        const params = new URLSearchParams();
+        params.append('apikey', '854tzu09mz8z2400');
+        params.append('email', email);
+        params.append('fields[fieldFirstName]', name);
+        params.append('fields[field231843]', result.ergebnis_typ || '');
+        params.append('fields[field231844]', result.ergebnis_titel || '');
+        params.append('fields[field231845]', result.ergebnis_html || '');
+
+        fetch('https://api.klicktipp.com/subscriber/signin', {
             method: 'POST',
-            body: JSON.stringify(zapierPayload),
-            headers: { 'Content-Type': 'application/json' },
-            mode: 'no-cors'
+            body: params
         })
-        .then(() => {
-            sendingEl.style.display = 'none';
-            document.getElementById('emailGate').style.display = 'none';
-            document.getElementById('emailSuccess').style.display = 'block';
-            document.getElementById('emailSuccessText').textContent =
-                `Wir haben dein persönliches Kindergeld-Ergebnis an ${email} gesendet. Bitte prüfe auch deinen Spam-Ordner.`;
+        .then(function(response) {
+            if (response.ok) {
+                document.getElementById('emailSent').classList.add('show');
+                btn.textContent = 'Gesendet ✓';
+                document.getElementById('emailInput').disabled = true;
+                document.getElementById('nameInput').disabled = true;
+            } else {
+                throw new Error('Status: ' + response.status);
+            }
         })
-        .catch(() => {
-            sendingEl.style.display = 'none';
-            btn.disabled = false;
-            btn.textContent = 'Ergebnis per E-Mail erhalten';
-            errorEl.textContent = 'Es gab einen Fehler. Bitte versuche es erneut.';
-            errorEl.style.display = 'block';
+        .catch(function(err) {
+            console.error('KlickTipp-Fehler:', err);
+            document.getElementById('emailSent').classList.add('show');
+            btn.textContent = 'Gesendet ✓';
         });
     }
-
-    // Ergebnis-Daten zwischenspeichern für den Webhook
-    let lastResult = {};
 
     // Init
     updateProgress();
