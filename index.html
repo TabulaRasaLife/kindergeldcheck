@@ -910,14 +910,16 @@
             </div>
             <div class="btn-row">
                 <button class="btn btn-secondary" onclick="goBack(7)">Zurück</button>
-                <button class="btn btn-primary" id="btnNext7" disabled onclick="evaluateResult()">Ergebnis auswerten</button>
+                <button class="btn btn-primary" id="btnNext7" disabled onclick="evaluateResult()">Ergebnis anfordern</button>
             </div>
         </div>
 
-        <!-- STEP 8: Ergebnis -->
+        <!-- STEP 8: Ergebnis (versteckt) + Email-Gate -->
         <div class="step" data-step="8">
-            <div class="step-label">Ergebnis</div>
-            <div class="result-card" id="resultCard">
+            <div class="step-label">Dein Ergebnis ist fertig!</div>
+
+            <!-- Ergebnis-Daten werden unsichtbar gerendert (für die Datenerfassung) -->
+            <div id="resultCard" style="display:none;">
                 <div class="result-header" id="resultHeader">
                     <div class="icon" id="resultIcon"></div>
                     <h3 id="resultTitle"></h3>
@@ -926,26 +928,29 @@
                 <div class="result-body" id="resultBody"></div>
             </div>
 
-            <div class="result-note" id="resultNote">
-                <strong>Wichtiger Hinweis:</strong> Diese Einschätzung dient ausschließlich der groben Orientierung und ersetzt keine individuelle Beratung. Kindergeldrecht ist komplex und hängt von vielen Einzelfallumständen ab. Bitte wende dich für eine verbindliche Auskunft an die Familienkasse oder einen spezialisierten Steuerberater.
-            </div>
-
-            <div class="email-section">
-                <h4>Ergebnis per E-Mail erhalten</h4>
-                <p>Trage deinen Namen und deine E-Mail-Adresse ein und wir senden dir das Ergebnis zu.</p>
-                <div class="email-row" style="flex-direction: column; gap: 10px;">
-                    <input type="text" id="nameInput" placeholder="Dein Vorname" style="padding: 12px 16px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem;">
-                    <div style="display: flex; gap: 10px;">
-                        <input type="email" id="emailInput" placeholder="deine@email.de" style="flex: 1;">
-                        <button class="btn btn-primary" id="submitBtn" onclick="sendEmail()">Senden</button>
+            <!-- Email-Gate: Nur das sieht der Nutzer -->
+            <div class="email-section" style="margin-top: 0; padding: 32px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;">
+                <div style="font-size: 3rem; margin-bottom: 16px;">&#128233;</div>
+                <h3 style="font-size: 1.3rem; color: #1a1a2e; margin-bottom: 8px;">Dein persönliches Ergebnis ist fertig!</h3>
+                <p style="color: #555; line-height: 1.6; margin-bottom: 24px;">
+                    Wir haben deine Angaben ausgewertet. Trage jetzt deinen Namen und deine E-Mail-Adresse ein — wir senden dir dein <strong>individuelles Kindergeld-Ergebnis</strong> kostenlos per E-Mail zu.
+                </p>
+                <div style="max-width: 400px; margin: 0 auto; text-align: left;">
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <input type="text" id="nameInput" placeholder="Dein Vorname" style="padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; font-family: inherit; width: 100%; box-sizing: border-box;">
+                        <input type="email" id="emailInput" placeholder="deine@email.de" style="padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; font-family: inherit; width: 100%; box-sizing: border-box;">
+                        <button class="btn btn-primary" id="submitBtn" onclick="sendEmail()" style="width: 100%; padding: 14px; font-size: 1rem;">Ergebnis per E-Mail erhalten</button>
                     </div>
                 </div>
                 <div class="email-sent" id="emailSent">
-                    &#10003; Dein Ergebnis wird in Kürze an deine E-Mail-Adresse gesendet.
+                    &#10003; Dein Ergebnis ist unterwegs! Prüfe dein Postfach.
                 </div>
                 <div class="email-error" id="emailError" style="display: none; color: #dc2626; margin-top: 8px; font-size: 0.85rem;">
                     Bitte gib deinen Vornamen und eine gültige E-Mail-Adresse ein.
                 </div>
+                <p style="font-size: 0.75rem; color: #999; margin-top: 16px;">
+                    Kein Spam. Deine Daten sind sicher. Du kannst dich jederzeit abmelden.
+                </p>
             </div>
 
             <div class="restart-row">
