@@ -1110,10 +1110,14 @@
     }
 
     function showResultNoChildren() {
-        showStep(totalSteps);
         setResult('negative', '&#10060;', 'Kein Kindergeldanspruch',
             'Du hast keine kindergeldberechtigten Kinder. Ein Kindergeldanspruch setzt voraus, dass mindestens ein Kind vorhanden ist, das die Alters- und Statusvoraussetzungen erfüllt.',
             []);
+        // Negatives Ergebnis direkt anzeigen, kein Email-Gate
+        document.getElementById('resultCard').style.display = '';
+        document.getElementById('resultNote').style.display = '';
+        document.getElementById('emailGate').style.display = 'none';
+        showStep(totalSteps);
     }
 
     function evaluateResult() {
