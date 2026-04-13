@@ -928,8 +928,12 @@
                 <div class="result-body" id="resultBody"></div>
             </div>
 
-            <!-- Email-Gate: Nur das sieht der Nutzer -->
-            <div class="email-section" style="margin-top: 0; padding: 32px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;">
+            <div class="result-note" id="resultNote" style="display: none;">
+                <strong>Wichtiger Hinweis:</strong> Diese Einschätzung dient ausschließlich der groben Orientierung und ersetzt keine individuelle Beratung. Kindergeldrecht ist komplex und hängt von vielen Einzelfallumständen ab.
+            </div>
+
+            <!-- Email-Gate: Nur bei nicht-negativen Ergebnissen sichtbar -->
+            <div class="email-section" id="emailGate" style="margin-top: 0; padding: 32px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; text-align: center;">
                 <div style="font-size: 3rem; margin-bottom: 16px;">&#128233;</div>
                 <h3 style="font-size: 1.3rem; color: #1a1a2e; margin-bottom: 8px;">Dein persönliches Ergebnis ist fertig!</h3>
                 <p style="color: #555; line-height: 1.6; margin-bottom: 24px;">
@@ -1513,20 +1517,38 @@
             content: getSummaryTable()
         });
 
-        // Ergebnis-Daten global speichern für Webhook-Versand
+        setResult(resultType, icon, title, subtitle, sections);
+
+        // Ergebnis als Plaintext für KlickTipp aufbereiten (kein HTML)
+        var resultPlaintext = sections.map(function(s) {
+            var tmp = document.createElement('div');
+            tmp.innerHTML = s.title;
+            var sectionTitle = tmp.textContent || tmp.innerText;
+            tmp.innerHTML = s.content;
+            var sectionContent = tmp.textContent || tmp.innerText;
+            return sectionTitle + '\n' + sectionContent;
+        }).join('\n\n');
+
         window._kindergeldResult = {
             ergebnis_typ: resultType,
             ergebnis_titel: title,
-            ergebnis_html: document.getElementById('resultBody') ? '' : '', // wird nach Rendering gesetzt
+            ergebnis_text: resultPlaintext,
             kinder_aufenthalt: kinderOrt || '',
             zielland: ziellandName || ''
         };
 
-        setResult(resultType, icon, title, subtitle, sections);
-        showStep(totalSteps);
+        // Negative Ergebnisse direkt anzeigen, alle anderen nur per Email
+        if (resultType === 'negative') {
+            document.getElementById('resultCard').style.display = '';
+            document.getElementById('resultNote').style.display = '';
+            document.getElementById('emailGate').style.display = 'none';
+        } else {
+            document.getElementById('resultCard').style.display = 'none';
+            document.getElementById('resultNote').style.display = 'none';
+            document.getElementById('emailGate').style.display = '';
+        }
 
-        // HTML nach dem Rendering erfassen
-        window._kindergeldResult.ergebnis_html = document.getElementById('resultBody').innerHTML;
+        showStep(totalSteps);
     }
 
     // ============================================================
@@ -1635,7 +1657,7 @@
         params.append('fields[fieldFirstName]', name);
         params.append('fields[field231843]', result.ergebnis_typ || '');
         params.append('fields[field231844]', result.ergebnis_titel || '');
-        params.append('fields[field231845]', result.ergebnis_html || '');
+        params.append('fields[field231845]', result.ergebnis_text || '');
 
         fetch('https://api.klicktipp.com/subscriber/signin', {
             method: 'POST',
