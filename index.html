@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -966,6 +967,28 @@
 
 <script>
     // ============================================================
+    //  IFRAME-HÖHE AN ELTERNSEITE MELDEN
+    //  Der Einbett-Wrapper (onepage.me) lauscht auf {type:'resize'}
+    //  und passt die iFrame-Höhe an. Ohne diese Meldung bleibt der
+    //  iFrame bei fester Höhe und lange Schritte werden abgeschnitten.
+    //  Gemessen wird .container statt body, da body min-height:100vh
+    //  hat und sonst nie schrumpfen würde.
+    // ============================================================
+    function reportHeight() {
+        if (window.parent === window) return; // Seite läuft standalone
+        const container = document.querySelector('.container');
+        if (!container) return;
+        const height = Math.ceil(container.getBoundingClientRect().height) + 8;
+        window.parent.postMessage({ type: 'resize', height: height }, '*');
+    }
+
+    if ('ResizeObserver' in window) {
+        new ResizeObserver(reportHeight).observe(document.querySelector('.container'));
+    }
+    window.addEventListener('load', reportHeight);
+    window.addEventListener('resize', reportHeight);
+
+    // ============================================================
     //  STATE
     // ============================================================
     let currentStep = 1;
@@ -1008,6 +1031,8 @@
             const label = target.querySelector('.step-label');
             if (label) label.textContent = `Schritt ${step} von ${totalSteps - 1}`;
         }
+        window.scrollTo(0, 0);
+        reportHeight();
     }
 
     function goNext(from) {
