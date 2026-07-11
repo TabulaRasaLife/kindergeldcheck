@@ -573,6 +573,23 @@
             .header h1 { font-size: 1.25rem; }
             .email-row { flex-direction: column; }
         }
+
+        /* Embed-Modus (Seite läuft in einem iFrame):
+           Einbettungen wie onepage.me setzen scrolling="no" und eine feste
+           Höhe, ohne auf resize-postMessages zu hören. Damit lange Schritte
+           trotzdem erreichbar bleiben, wird der Fragenbereich intern
+           scrollbar; Header und Fortschrittsbalken bleiben oben stehen.
+           Passt die Elternseite die iFrame-Höhe doch dynamisch an, ist der
+           Inhalt kleiner als 100vh und es erscheint kein innerer Scrollbalken. */
+        body.embedded { height: 100vh; overflow: hidden; }
+        body.embedded .container { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+        body.embedded .header, body.embedded .progress-bar { flex-shrink: 0; }
+        body.embedded .form-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
     </style>
 </head>
 <body>
@@ -973,16 +990,37 @@
     //  Gemessen wird .container statt body, da body min-height:100vh
     //  hat und sonst nie schrumpfen würde.
     // ============================================================
+    const isEmbedded = window.parent !== window;
+    if (isEmbedded) document.body.classList.add('embedded');
+
     function reportHeight() {
-        if (window.parent === window) return; // Seite läuft standalone
+        if (!isEmbedded) return; // Seite läuft standalone
         const container = document.querySelector('.container');
-        if (!container) return;
-        const height = Math.ceil(container.getBoundingClientRect().height) + 8;
+        const formBody = document.querySelector('.form-body');
+        if (!container || !formBody) return;
+        // Natürliche Inhaltshöhe melden, unabhängig von der aktuellen
+        // iFrame-Höhe (der Fragenbereich kann gedehnt oder gedeckelt sein):
+        // Kopf (Header + Progressbar) + aktiver Schritt + Padding des
+        // Fragenbereichs + weitere Body-Elemente (z.B. Disclaimer).
+        const activeStep = document.querySelector('.step.active');
+        if (!activeStep) return;
+        const kopf = container.offsetHeight - formBody.offsetHeight;
+        const fbStyle = window.getComputedStyle(formBody);
+        const padding = parseFloat(fbStyle.paddingTop) + parseFloat(fbStyle.paddingBottom);
+        let rest = 0;
+        [...document.body.children].forEach(function(el) {
+            if (el !== container && el.tagName !== 'SCRIPT') rest += el.offsetHeight;
+        });
+        const height = Math.ceil(kopf + activeStep.offsetHeight + padding + rest) + 8;
         window.parent.postMessage({ type: 'resize', height: height }, '*');
     }
 
     if ('ResizeObserver' in window) {
-        new ResizeObserver(reportHeight).observe(document.querySelector('.container'));
+        const ro = new ResizeObserver(reportHeight);
+        ro.observe(document.querySelector('.container'));
+        // Jeden Schritt beobachten: löst auch aus, wenn sich Inhalte im
+        // aktiven Schritt ändern (z.B. Erfolgsmeldung nach E-Mail-Versand).
+        document.querySelectorAll('.step').forEach(function(el) { ro.observe(el); });
     }
     window.addEventListener('load', reportHeight);
     window.addEventListener('resize', reportHeight);
@@ -1031,6 +1069,8 @@
             if (label) label.textContent = `Schritt ${step} von ${totalSteps - 1}`;
         }
         window.scrollTo(0, 0);
+        const formBody = document.querySelector('.form-body');
+        if (formBody) formBody.scrollTop = 0;
         reportHeight();
     }
 
